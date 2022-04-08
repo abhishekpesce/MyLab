@@ -1,0 +1,10 @@
+{
+    "name":"abhishek",
+    "isadmin":true,
+    "department":["it","finance","sales"],
+    "work":{
+        "automation": true,
+        "manual":"depend on project",
+        "designation":["developer","agent","manager",{"salary":5000}]
+    }
+}
