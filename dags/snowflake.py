@@ -1,6 +1,6 @@
 from airflow import DAG
 from airflow.operators.dummy import DummyOperator
-from airflow.providers.snowflake.operatiors.snowflake import snowflake
+from airflow.providers.snowflake.operators.snowflake import SnowflakeOperator
 
 from datetime import datetime
 
