@@ -13,16 +13,13 @@ from airflow.providers.dbt.cloud.operators.dbt import (
 )
 from airflow.providers.dbt.cloud.sensors.dbt import DbtCloudJobRunSensor
 from airflow.utils.edgemodifier import Label
-from tests.system.utils import get_test_env_id
-
-ENV_ID = get_test_env_id()
 
 DAG_ID = "dbt_cloud"
 
 
 with DAG(
     dag_id=DAG_ID,
-    default_args={"dbt_cloud_conn_id": "dbt", "account_id": 76645},
+    default_args={"dbt_cloud_conn_id": "dbt_cloud", "account_id": 76645},
     start_date=datetime(2021, 1, 1),
     schedule_interval=None,
     catchup=False,
