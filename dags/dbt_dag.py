@@ -28,22 +28,20 @@ with DAG(
     catchup=False,
 ) as dag:
   begin = EmptyOperator(task_id="begin")
-
-    end = EmptyOperator(task_id="end")
-
-    # [START howto_operator_dbt_cloud_run_job]
-    trigger_job_run1 = DbtCloudRunJobOperator(
-        task_id="trigger_job_run1",
-        job_id=98266,
-        check_interval=10,
-        timeout=300,
-    )
-    # [END howto_operator_dbt_cloud_run_job]
-
-    # [START howto_operator_dbt_cloud_get_artifact]
-    get_run_results_artifact = DbtCloudGetJobRunArtifactOperator(
+  end = EmptyOperator(task_id="end")
+  
+  # [START howto_operator_dbt_cloud_run_job]
+  trigger_job_run1 = DbtCloudRunJobOperator(
+      task_id="trigger_job_run1",
+      job_id=98266,
+      check_interval=10,
+      timeout=300,
+      )
+   # [END howto_operator_dbt_cloud_run_job]
+   # [START howto_operator_dbt_cloud_get_artifact]
+   get_run_results_artifact = DbtCloudGetJobRunArtifactOperator(
         task_id="get_run_results_artifact", run_id=trigger_job_run1.output, path="run_results.json"
     )
     # [END howto_operator_dbt_cloud_get_artifact]
-
+    
     begin >> Label("No async wait") >> trigger_job_run1 >> get_run_results_artifact>> end
