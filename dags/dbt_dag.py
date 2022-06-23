@@ -11,6 +11,7 @@ with DAG(
     start_date=datetime(2021, 12, 23),
     description='An Airflow DAG to invoke simple dbt commands',
     schedule_interval=timedelta(days=1),
+    catchup = False
 ) as dag:
 
     dbt_run = BashOperator(
