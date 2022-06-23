@@ -1,49 +1,65 @@
-from pendulum import datetime
+from datetime import datetime
 
-from airflow.decorators import dag
-from airflow.operators.dummy import DummyOperator
-from airflow.operators.python import ShortCircuitOperator
-from airflow.providers.dbt.cloud.hooks.dbt import DbtCloudHook, DbtCloudJobRunStatus
-from airflow.providers.dbt.cloud.operators.dbt import DbtCloudRunJobOperator
-from airflow.utils.edgemodifier import Label
+from airflow.models import DAG
 
-DBT_CLOUD_CONN_ID = "dbt_cloud"
-JOB_ID = "{{ var.value.dbt_cloud_job_id }}"
+try:
+    from airflow.operators.empty import EmptyOperator
+except ModuleNotFoundError:
+    from airflow.operators.dummy import DummyOperator as EmptyOperator  # type: ignore
 
-def _check_job_not_running(job_id):
-    """
-    Retrieves the last run for a given dbt Cloud job and checks to see if the job is not currently running.
-    """
-    hook = DbtCloudHook(DBT_CLOUD_CONN_ID)
-    runs = hook.list_job_runs(job_definition_id=job_id, order_by="-id")
-    latest_run = runs[0].json()["data"][0]
-
-    return DbtCloudJobRunStatus.is_terminal(latest_run["status"])
-
-@dag(
-    start_date=datetime(2022, 2, 10),
-    schedule_interval="@daily",
-    catchup=False,
-    default_view="graph",
-    doc_md=__doc__,
+from airflow.providers.dbt.cloud.operators.dbt import (
+    DbtCloudGetJobRunArtifactOperator,
+    DbtCloudRunJobOperator,
 )
-def check_before_running_dbt_cloud_job():
-    begin, end = [DummyOperator(task_id=id) for id in ["begin", "end"]]
+from airflow.providers.dbt.cloud.sensors.dbt import DbtCloudJobRunSensor
+from airflow.utils.edgemodifier import Label
+from tests.system.utils import get_test_env_id
 
-    check_job = ShortCircuitOperator(
-        task_id="check_job_is_not_running",
-        python_callable=_check_job_not_running,
-        op_kwargs={"job_id": JOB_ID},
+ENV_ID = get_test_env_id()
+
+DAG_ID = "dbt_cloud"
+
+
+with DAG(
+    dag_id=DAG_ID,
+    default_args={"dbt_cloud_conn_id": "dbt", "account_id": 76645},
+    start_date=datetime(2021, 1, 1),
+    schedule_interval=None,
+    catchup=False,
+) as dag:
+  begin = EmptyOperator(task_id="begin")
+
+    end = EmptyOperator(task_id="end")
+
+    # [START howto_operator_dbt_cloud_run_job]
+    trigger_job_run1 = DbtCloudRunJobOperator(
+        task_id="trigger_job_run1",
+        job_id=98266,
+        check_interval=10,
+        timeout=300,
     )
+    # [END howto_operator_dbt_cloud_run_job]
 
-    trigger_job = DbtCloudRunJobOperator(
-        task_id="trigger_dbt_cloud_job",
-        dbt_cloud_conn_id=DBT_CLOUD_CONN_ID,
-        job_id=JOB_ID,
-        check_interval=600,
-        timeout=3600,
+    # [START howto_operator_dbt_cloud_get_artifact]
+    get_run_results_artifact = DbtCloudGetJobRunArtifactOperator(
+        task_id="get_run_results_artifact", run_id=trigger_job_run1.output, path="run_results.json"
     )
+    # [END howto_operator_dbt_cloud_get_artifact]
 
-    begin >> check_job >> Label("Job not currently running. Proceeding.") >> trigger_job >> end
+    begin >> Label("No async wait") >> trigger_job_run1 >> get_run_results_artifact>> end
 
-dag = check_before_running_dbt_cloud_job()
+    # Task dependency created via `XComArgs`:
+    # trigger_job_run1 >> get_run_results_artifact
+    # trigger_job_run2 >> job_run_sensor
+
+    from tests.system.utils.watcher import watcher
+
+    # This test needs watcher in order to properly mark success/failure
+    # when "tearDown" task with trigger rule is part of the DAG
+    list(dag.tasks) >> watcher()
+
+
+from tests.system.utils import get_test_run  # noqa: E402
+
+# Needed to run the example DAG with pytest (see: tests/system/README.md#run_via_pytest)
+[docs]test_run = get_test_run(dag)
