@@ -29,7 +29,7 @@ with DAG(
   
   trigger_job_run1 = DbtCloudRunJobOperator(
       task_id="trigger_job_run1",
-      job_id=98266,
+      job_id=98170,
       check_interval=10,
       timeout=300,
       )
