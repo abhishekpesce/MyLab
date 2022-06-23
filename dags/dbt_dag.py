@@ -7,8 +7,8 @@ from airflow.providers.dbt.cloud.hooks.dbt import DbtCloudHook, DbtCloudJobRunSt
 from airflow.providers.dbt.cloud.operators.dbt import DbtCloudRunJobOperator
 from airflow.utils.edgemodifier import Label
 
-DBT_CLOUD_CONN_ID = "dbt"
-JOB_ID = "{{ var.value.dbt_cloud_job_id }}"
+DBT_CLOUD_CONN_ID = "dbt_cloud"
+JOB_ID = 98266
 
 def _check_job_not_running(job_id):
     """
