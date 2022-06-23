@@ -1,32 +1,49 @@
-from datetime import timedelta
+from pendulum import datetime
 
-from airflow import DAG
-from airflow.operators.bash_operator import BashOperator
-from airflow.utils.dates import datetime
-from airflow.utils.dates import timedelta
-from airflow.providers.dbt.cloud.operators.dbt import (
-    DbtCloudGetJobRunArtifactOperator,
-    DbtCloudRunJobOperator,
+from airflow.decorators import dag
+from airflow.operators.dummy import DummyOperator
+from airflow.operators.python import ShortCircuitOperator
+from airflow.providers.dbt.cloud.hooks.dbt import DbtCloudHook, DbtCloudJobRunStatus
+from airflow.providers.dbt.cloud.operators.dbt import DbtCloudRunJobOperator
+from airflow.utils.edgemodifier import Label
+
+DBT_CLOUD_CONN_ID = "dbt"
+JOB_ID = "{{ var.value.dbt_cloud_job_id }}"
+
+def _check_job_not_running(job_id):
+    """
+    Retrieves the last run for a given dbt Cloud job and checks to see if the job is not currently running.
+    """
+    hook = DbtCloudHook(DBT_CLOUD_CONN_ID)
+    runs = hook.list_job_runs(job_definition_id=job_id, order_by="-id")
+    latest_run = runs[0].json()["data"][0]
+
+    return DbtCloudJobRunStatus.is_terminal(latest_run["status"])
+
+@dag(
+    start_date=datetime(2022, 2, 10),
+    schedule_interval="@daily",
+    catchup=False,
+    default_view="graph",
+    doc_md=__doc__,
 )
+def check_before_running_dbt_cloud_job():
+    begin, end = [DummyOperator(task_id=id) for id in ["begin", "end"]]
 
-
-with DAG(
-    dag_id='dbt_dag',
-    default_args={"dbt_cloud_conn_id": "dbt", "account_id": 76645},
-    start_date=datetime(2021, 12, 23),
-    description='An Airflow DAG to invoke simple dbt commands',
-    schedule_interval=timedelta(days=1),
-    catchup = False
-) as dag:
-
-    dbt_run = BashOperator(
-        task_id='dbt_run',
-        bash_command='dbt run'
+    check_job = ShortCircuitOperator(
+        task_id="check_job_is_not_running",
+        python_callable=_check_job_not_running,
+        op_kwargs={"job_id": JOB_ID},
     )
 
-    dbt_test = BashOperator(
-        task_id='dbt_test',
-        bash_command='dbt test'
+    trigger_job = DbtCloudRunJobOperator(
+        task_id="trigger_dbt_cloud_job",
+        dbt_cloud_conn_id=DBT_CLOUD_CONN_ID,
+        job_id=JOB_ID,
+        check_interval=600,
+        timeout=3600,
     )
 
-    dbt_run >> dbt_test
+    begin >> check_job >> Label("Job not currently running. Proceeding.") >> trigger_job >> end
+
+dag = check_before_running_dbt_cloud_job()
