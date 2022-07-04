@@ -11,5 +11,5 @@ ON c.c_custkey = o.o_custkey
 group by 
     c.c_custkey,
     c.c_name,
-    c.c_nationkey;
+    c.c_nationkey
 
