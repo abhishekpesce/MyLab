@@ -1,5 +1,5 @@
 SELECT 
-    c.custkey,
+    c.c_custkey,
     c.c_name,
     c.c_nationkey as nation,
     sum(o.o_totalprice) as total_order_price
