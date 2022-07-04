@@ -17,7 +17,7 @@ models:
         description: "The primary key for this table"
         tests:
           - unique
-          
+
   - name: snowflake_customer_purchases
     description: "the total purchases for each customer in snowflake sample data"
     columns:
@@ -25,4 +25,12 @@ models:
         tests:
           - unique
           - not_null
+  
+   - name: my_variable_model
+    description: "A starter dbt model"
+    columns:
+      - name: id
+        description: "The primary key for this table"
+        tests:
+          - unique
   
