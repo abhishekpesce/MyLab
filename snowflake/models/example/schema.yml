@@ -25,8 +25,8 @@ models:
         tests:
           - unique
           - not_null
-  
-   - name: my_variable_model
+           
+  - name: my_variable_model
     description: "A starter dbt model"
     columns:
       - name: id
