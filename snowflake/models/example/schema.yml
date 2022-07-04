@@ -20,7 +20,7 @@ models:
   
   - name : snowflake_customer_purchases
      description: "the total purchases for each customer in snowflake sample data"
-      columns:
+     columns:
         - name: c_custkey
           tests:
             - unique
