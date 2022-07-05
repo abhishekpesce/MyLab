@@ -36,8 +36,8 @@ models:
 
 sources:
   - name: sample
-    description: "snowflake_sample_data"
-    schema: SNOWFLAKE_SAMPLE_DATA.tpch_sf1
+    database: SNOWFLAKE_SAMPLE_DATA
+    schema: tpch_sf1
     tables:
       - name: customer
       - name: orders
