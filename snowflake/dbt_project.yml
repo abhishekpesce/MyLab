@@ -46,4 +46,5 @@ models:
       vars:
         my_first_variable: True
         my_second_variable: 2020
-        my_third_variable: 1
+        my_third_variable: 
+      pre-hooks: "insert into dbt.audit (model,state,time) values ('{{this.name}}','starting model deployment',current_timestamp) "
