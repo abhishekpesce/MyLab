@@ -23,6 +23,8 @@ target-path: "target"  # directory which will store compiled SQL files
 clean-targets:         # directories to be removed by `dbt clean`
   - "target"
   - "dbt_packages"
+on-run-start:
+  - "create table if not exists audit (model text,state text,time timestamp_ltz)"
 
 on-run-end:
   - 'grant usage on schema analytics.dbt to role analyst'
