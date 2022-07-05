@@ -25,7 +25,7 @@ models:
         tests:
           - unique
           - not_null
-           
+
   - name: my_variable_model
     description: "A starter dbt model"
     columns:
@@ -33,4 +33,12 @@ models:
         description: "The primary key for this table"
         tests:
           - unique
+
+sources:
+  - name: sample
+    description: "snowflake_sample_data"
+    schema: tpch_sf1
+    tables:
+      - name: customer
+      - name: orders
   
