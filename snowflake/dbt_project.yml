@@ -38,6 +38,15 @@ on-run-end:
 # In this example config, we tell dbt to build all models in the example/ directory
 # as tables. These settings can be overridden in the individual model files
 # using the `{{ config(...) }}` macro.
+vars:
+  hash: MD5
+  max_datetime: '{{ dbtvault.max_datetime() }}'
+  concat_string: '||'
+  null_placeholder_string: '^^'
+  escape_char_left: '"'
+  escape_char_right: '"'
+  load_date: '1992-01-08'
+
 models:
   snowflake:
     # Config indicated by + and applies to all files under models/example/
@@ -48,3 +57,22 @@ models:
         my_second_variable: 2020
         my_third_variable: 
       pre-hook: "insert into dbt.audit (model,state,time) values ('{{ this }}','starting model deployment',current_timestamp) "
+  
+  customer_order_dbtvault:
+    stage:
+      tags:
+        - 'stage'
+      materialized: view
+    raw_vault:
+      tags:
+        - 'raw_vault'
+      materialized: incremental
+      hubs:
+        tags:
+          - 'hub'
+      links:
+        tags:
+          - 'link'
+      sats:
+        tags:
+          - 'satellite'
